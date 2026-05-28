@@ -1,7 +1,7 @@
 # Nova Syndicate — AWS Cloud Security Architecture
 
 ## Overview
-
+![Nova Syndicate Architecture](architecture/SPRINT_1_NOVA_V6.png)
 Nova Syndicate is a fictional logistics company handling sensitive medical, aerospace, and defense-related components.
 
 This project demonstrates the design and deployment of a secure AWS cloud infrastructure following security best practices and enterprise-grade architecture principles.
