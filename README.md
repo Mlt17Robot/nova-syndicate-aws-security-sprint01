@@ -65,12 +65,6 @@ This architecture was designed with the following security principles:
 
 ---
 
-# Architecture Diagram
-
-![Nova Syndicate Architecture](Architecture/SPRINT_1_NOVA_V6.png)
-
----
-
 # Traffic Flow
 
 Internet → Application Load Balancer → Private Application Layer → Private Database Layer
