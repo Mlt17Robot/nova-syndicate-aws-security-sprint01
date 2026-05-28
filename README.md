@@ -10,6 +10,10 @@ The objective is to build a resilient, segmented, monitored, and secure cloud en
 
 ---
 
+# Architecture Diagram
+
+![Nova Syndicate Architecture](Architecture/SPRINT_1_NOVA_V6.png)
+
 # Sprint 1 — Secure Foundation
 
 ## Implemented Components
