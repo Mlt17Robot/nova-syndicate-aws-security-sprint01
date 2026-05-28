@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nova Syndicate - Security Groups
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: nova-syndicate
+
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+
+# =========================================================
+# ALB SECURITY GROUP
+# =========================================================
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP and HTTPS from Internet
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-alb-sg"
+
+# =========================================================
+# APPLICATION SECURITY GROUP
+# =========================================================
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow traffic only from ALB
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-app-sg"
+
+# =========================================================
+# DATABASE SECURITY GROUP
+# =========================================================
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow PostgreSQL only from App servers
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref AppSecurityGroup
+
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-db-sg"
+
+Outputs:
+
+  ALBSecurityGroupId:
+    Value: !Ref ALBSecurityGroup
+
+  AppSecurityGroupId:
+    Value: !Ref AppSecurityGroup
+
+  DatabaseSecurityGroupId:
+    Value: !Ref DatabaseSecurityGroup

@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nova Syndicate - Security Logging Foundation
+
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: nova-syndicate
+
+
+  Environment:
+    Type: String
+    Default: prod
+
+
+Resources:
+
+
+  NovaSecurityKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS Key for Nova Syndicate security services
+      EnableKeyRotation: true
+      PendingWindowInDays: 7
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: EnableRootPermissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+
+
+          - Sid: AllowCloudTrailUseOfKey
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - kms:GenerateDataKey*
+              - kms:Decrypt
+            Resource: "*"
+
+
+  NovaSecurityKMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${ProjectName}-${Environment}-security-key"
+      TargetKeyId: !Ref NovaSecurityKMSKey
+
+
+  NovaLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+
+
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref NovaSecurityKMSKey
+
+
+      LifecycleConfiguration:
+        Rules:
+          - Id: GlacierTransition
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+
+
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-logs-bucket"
+
+
+  NovaLogsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref NovaLogsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt NovaLogsBucket.Arn
+
+
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "${NovaLogsBucket.Arn}/AWSLogs/${AWS::AccountId}/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+
+
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt NovaLogsBucket.Arn
+              - !Sub "${NovaLogsBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+
+  NovaCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: NovaLogsBucketPolicy
+    Properties:
+      TrailName: !Sub "${ProjectName}-${Environment}-cloudtrail"
+      S3BucketName: !Ref NovaLogsBucket
+      IsLogging: true
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      EnableLogFileValidation: true
+      KMSKeyId: !GetAtt NovaSecurityKMSKey.Arn
+
+
+Outputs:
+  LogsBucketName:
+    Description: Logs Bucket Name
+    Value: !Ref NovaLogsBucket
+
+
+  KMSKeyArn:
+    Description: KMS Key ARN
+    Value: !GetAtt NovaSecurityKMSKey.Arn

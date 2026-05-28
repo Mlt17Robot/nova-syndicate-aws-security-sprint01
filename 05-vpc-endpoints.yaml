@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nova Syndicate - VPC Endpoints for Private AWS Access
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: nova-syndicate
+
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+
+  EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Interface VPC Endpoints
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.0.0.0/16
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-endpoint-sg"
+
+  S3GatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !ImportValue nova-syndicate-prod-PrivateRouteTableId
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-s3-gateway-endpoint"
+
+  SSMEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds: !Split [",", !ImportValue nova-syndicate-prod-PrivateAppSubnets]
+      SecurityGroupIds:
+        - !Ref EndpointSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-ssm-endpoint"
+
+  SSMMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssmmessages"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds: !Split [",", !ImportValue nova-syndicate-prod-PrivateAppSubnets]
+      SecurityGroupIds:
+        - !Ref EndpointSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-ssmmessages-endpoint"
+
+  EC2MessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds: !Split [",", !ImportValue nova-syndicate-prod-PrivateAppSubnets]
+      SecurityGroupIds:
+        - !Ref EndpointSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-ec2messages-endpoint"
+
+  CloudWatchLogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !ImportValue nova-syndicate-prod-VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds: !Split [",", !ImportValue nova-syndicate-prod-PrivateAppSubnets]
+      SecurityGroupIds:
+        - !Ref EndpointSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-logs-endpoint"
+
+Outputs:
+  EndpointSecurityGroupId:
+    Value: !Ref EndpointSecurityGroup
+
+  S3GatewayEndpointId:
+    Value: !Ref S3GatewayEndpoint
+
+  SSMEndpointId:
+    Value: !Ref SSMEndpoint
+
+  SSMMessagesEndpointId:
+    Value: !Ref SSMMessagesEndpoint
+
+  EC2MessagesEndpointId:
+    Value: !Ref EC2MessagesEndpoint
+
+  CloudWatchLogsEndpointId:
+    Value: !Ref CloudWatchLogsEndpoint
