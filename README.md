@@ -1,19 +1,12 @@
 # Nova Syndicate — AWS Cloud Security Architecture
 
 ## Overview
-![Nova Syndicate Architecture](architecture/SPRINT_1_NOVA_V6.png)
+
 Nova Syndicate is a fictional logistics company handling sensitive medical, aerospace, and defense-related components.
 
-This project demonstrates the design and deployment of a secure AWS cloud infrastructure following security best practices and enterprise-grade architecture principles.
+This project demonstrates the design and deployment of a secure AWS cloud infrastructure following enterprise security best practices and AWS Well-Architected principles.
 
-The infrastructure focuses on:
-
-- Network segmentation
-- Multi-AZ resilience
-- Secure private workloads
-- Centralized logging & monitoring
-- Zero Trust principles
-- AWS-native security services
+The objective is to build a resilient, segmented, monitored, and secure cloud environment using Infrastructure as Code (IaC) with AWS CloudFormation.
 
 ---
 
@@ -21,46 +14,95 @@ The infrastructure focuses on:
 
 ## Implemented Components
 
-### Networking
-- Multi-AZ VPC architecture
-- Public / Private App / Private DB subnets
-- Internet Gateway
-- NAT Gateway
-- Route Tables
-- Security Groups
-- NACL protection
+### Network Architecture
 
-### Security
-- AWS KMS encryption
-- Security Hub
-- GuardDuty
-- CloudTrail
-- VPC Flow Logs
-- CloudWatch monitoring
-- Secure S3 audit logs bucket
+* Multi-AZ VPC architecture
+* Public Subnets
+* Private Application Subnets
+* Private Database Subnets
+* Internet Gateway
+* NAT Gateway
+* Route Tables
+* Security Groups
+* NACL segmentation
+
+### Security & Monitoring
+
+* AWS KMS encryption
+* AWS CloudTrail
+* VPC Flow Logs
+* CloudWatch Logs
+* GuardDuty
+* Security Hub
+* Secure S3 logging bucket
+* Centralized monitoring architecture
 
 ### Private AWS Access
-- S3 Gateway Endpoint
-- SSM Endpoint
-- EC2 Messages Endpoint
-- CloudWatch Logs Endpoint
+
+* S3 Gateway Endpoint
+* SSM Endpoint
+* EC2 Messages Endpoint
+* SSM Messages Endpoint
+* CloudWatch Logs Endpoint
 
 ---
 
-# Security Architecture Goals
+# Security Objectives
 
-- No direct internet access to workloads
-- Private database isolation
-- Centralized audit logging
-- Monitoring & threat detection
-- Encrypted storage and logs
-- Reduced attack surface
+This architecture was designed with the following security principles:
+
+* Zero Trust network segmentation
+* No direct internet access to workloads
+* Private database isolation
+* Centralized logging and auditability
+* Reduced attack surface
+* Encrypted logs and storage
+* Secure private communication with AWS services
 
 ---
 
 # Architecture Diagram
 
-(Add your architecture PNG here)
+![Nova Syndicate Architecture](Architecture/SPRINT_1_NOVA_V6.png)
+
+---
+
+# Traffic Flow
+
+Internet → Application Load Balancer → Private Application Layer → Private Database Layer
+
+Private workloads access AWS services through VPC Endpoints instead of public internet connectivity.
+
+---
+
+# AWS Services Used
+
+* Amazon VPC
+* AWS CloudFormation
+* Amazon EC2
+* Amazon RDS PostgreSQL
+* AWS CloudTrail
+* Amazon CloudWatch
+* AWS KMS
+* Amazon S3
+* AWS Security Hub
+* Amazon GuardDuty
+* AWS IAM
+* VPC Endpoints
+
+---
+
+# Infrastructure as Code
+
+All resources are deployed using AWS CloudFormation templates.
+
+Current templates:
+
+* 01-network-foundation.yaml
+* 02-security-iam-kms.yaml
+* 03-logging-monitoring.yaml
+* 05-vpc-endpoints.yaml
+* 06-security-groups.yaml
 
 ---
 
@@ -68,35 +110,21 @@ The infrastructure focuses on:
 
 ## Sprint 2 — Compute Layer
 
-- Application Load Balancer
-- Private EC2 instances
-- RDS PostgreSQL
-- SSM Session Manager
-- Auto Scaling
-- Hardened IAM roles
-- Secure application deployment
+Next implementation steps:
 
----
-
-# Technologies Used
-
-- AWS CloudFormation
-- Amazon VPC
-- EC2
-- RDS PostgreSQL
-- CloudTrail
-- GuardDuty
-- Security Hub
-- CloudWatch
-- KMS
-- S3
-- IAM
-- VPC Endpoints
+* Application Load Balancer
+* Private EC2 instances
+* RDS PostgreSQL
+* Auto Scaling
+* SSM Session Manager
+* Hardened IAM Roles
+* Secure application deployment
 
 ---
 
 # Author
 
 Lionel Mpata
+
 AWS Certified Solutions Architect – Associate
 Cloud Security & AWS Architecture Enthusiast
